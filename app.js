@@ -1,89 +1,188 @@
 // ==========================================
 // FarmPilot - Poultry Farm Tracker
-// Main Application Logic
+// Full Application Logic with Authentication
 // ==========================================
 
-// Initialize App
 class FarmPilot {
     constructor() {
+        this.users = {};
+        this.currentUser = null;
         this.activities = [];
         this.inventory = [];
         this.healthRecords = [];
-        this.currentUser = null;
+        this.expenses = [];
         this.init();
     }
 
     init() {
-        this.loadData();
+        this.loadAllData();
         this.setupEventListeners();
-        this.setDefaultDates();
-        this.updateDashboard();
+        this.checkUserLoggedIn();
     }
 
     // ==========================================
-    // Data Management
+    // Authentication
     // ==========================================
 
-    saveData() {
-        localStorage.setItem('farmPilotActivities', JSON.stringify(this.activities));
-        localStorage.setItem('farmPilotInventory', JSON.stringify(this.inventory));
-        localStorage.setItem('farmPilotHealthRecords', JSON.stringify(this.healthRecords));
+    checkUserLoggedIn() {
+        const loggedInUser = localStorage.getItem('farmPilotCurrentUser');
+        if (loggedInUser) {
+            this.currentUser = JSON.parse(loggedInUser);
+            this.loadUserData();
+            this.showApp();
+        } else {
+            this.showAuthModal();
+        }
     }
 
-    loadData() {
-        this.activities = JSON.parse(localStorage.getItem('farmPilotActivities')) || [];
-        this.inventory = JSON.parse(localStorage.getItem('farmPilotInventory')) || [];
-        this.healthRecords = JSON.parse(localStorage.getItem('farmPilotHealthRecords')) || [];
+    toggleAuthForm() {
+        document.getElementById('loginForm').classList.toggle('active');
+        document.getElementById('signupForm').classList.toggle('active');
     }
-
-    // ==========================================
-    // Event Listeners Setup
-    // ==========================================
 
     setupEventListeners() {
+        // Auth
+        document.getElementById('loginForm')?.addEventListener('submit', (e) => this.handleLogin(e));
+        document.getElementById('signupForm')?.addEventListener('submit', (e) => this.handleSignup(e));
+
         // Navigation
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.changePage(e.target.dataset.page));
         });
 
         // Forms
-        document.getElementById('activityForm').addEventListener('submit', (e) => this.handleActivitySubmit(e));
-        document.getElementById('inventoryForm').addEventListener('submit', (e) => this.handleInventorySubmit(e));
-        document.getElementById('healthForm').addEventListener('submit', (e) => this.handleHealthSubmit(e));
+        document.getElementById('activityForm')?.addEventListener('submit', (e) => this.handleActivitySubmit(e));
+        document.getElementById('inventoryForm')?.addEventListener('submit', (e) => this.handleInventorySubmit(e));
+        document.getElementById('healthForm')?.addEventListener('submit', (e) => this.handleHealthSubmit(e));
+        document.getElementById('expenseForm')?.addEventListener('submit', (e) => this.handleExpenseSubmit(e));
 
         // Reports
-        document.getElementById('generateReportBtn').addEventListener('click', () => this.generateReport());
+        document.getElementById('generateReportBtn')?.addEventListener('click', () => this.generateReport());
+
+        // Settings
+        document.getElementById('exportDataBtn')?.addEventListener('click', () => this.exportData());
+        document.getElementById('clearDataBtn')?.addEventListener('click', () => this.clearAllData());
+        document.getElementById('deleteAccountBtn')?.addEventListener('click', () => this.deleteAccount());
 
         // Logout
-        document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
+        document.getElementById('logoutBtn')?.addEventListener('click', () => this.logout());
+    }
+
+    handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        const user = this.users[email];
+        if (!user) {
+            this.showAlert('User not found', 'error');
+            return;
+        }
+
+        if (user.password !== password) {
+            this.showAlert('Incorrect password', 'error');
+            return;
+        }
+
+        this.currentUser = { email: user.email, name: user.name, farm: user.farm };
+        localStorage.setItem('farmPilotCurrentUser', JSON.stringify(this.currentUser));
+        this.loadUserData();
+        this.showApp();
+    }
+
+    handleSignup(e) {
+        e.preventDefault();
+        const name = document.getElementById('signupName').value;
+        const email = document.getElementById('signupEmail').value;
+        const farm = document.getElementById('farmName').value;
+        const password = document.getElementById('signupPassword').value;
+        const password2 = document.getElementById('signupPassword2').value;
+
+        if (password !== password2) {
+            this.showAlert('Passwords do not match', 'error');
+            return;
+        }
+
+        if (this.users[email]) {
+            this.showAlert('Email already registered', 'error');
+            return;
+        }
+
+        this.users[email] = { name, email, farm, password };
+        this.saveUsersData();
+        this.showAlert('Account created successfully! Please login.', 'success');
+        this.toggleAuthForm();
+        document.getElementById('signupForm').reset();
     }
 
     // ==========================================
-    // Page Navigation
+    // Data Management
     // ==========================================
 
-    changePage(pageName) {
-        // Hide all pages
-        document.querySelectorAll('.page').forEach(page => {
-            page.classList.remove('active');
-        });
+    saveUsersData() {
+        localStorage.setItem('farmPilotUsers', JSON.stringify(this.users));
+    }
 
-        // Show selected page
+    loadAllData() {
+        this.users = JSON.parse(localStorage.getItem('farmPilotUsers')) || {};
+    }
+
+    saveUserData() {
+        const userKey = this.currentUser.email;
+        localStorage.setItem(`farmPilot_${userKey}_activities`, JSON.stringify(this.activities));
+        localStorage.setItem(`farmPilot_${userKey}_inventory`, JSON.stringify(this.inventory));
+        localStorage.setItem(`farmPilot_${userKey}_health`, JSON.stringify(this.healthRecords));
+        localStorage.setItem(`farmPilot_${userKey}_expenses`, JSON.stringify(this.expenses));
+    }
+
+    loadUserData() {
+        const userKey = this.currentUser.email;
+        this.activities = JSON.parse(localStorage.getItem(`farmPilot_${userKey}_activities`)) || [];
+        this.inventory = JSON.parse(localStorage.getItem(`farmPilot_${userKey}_inventory`)) || [];
+        this.healthRecords = JSON.parse(localStorage.getItem(`farmPilot_${userKey}_health`)) || [];
+        this.expenses = JSON.parse(localStorage.getItem(`farmPilot_${userKey}_expenses`)) || [];
+    }
+
+    // ==========================================
+    // UI Management
+    // ==========================================
+
+    showAuthModal() {
+        document.getElementById('authModal').classList.add('active');
+        document.getElementById('appContainer').style.display = 'none';
+    }
+
+    showApp() {
+        document.getElementById('authModal').classList.remove('active');
+        document.getElementById('appContainer').style.display = 'flex';
+        this.updateUserInfo();
+        this.updateDashboard();
+        this.setDefaultDates();
+    }
+
+    updateUserInfo() {
+        document.getElementById('userEmail').textContent = this.currentUser.email;
+        document.getElementById('farmNameDisplay').textContent = this.currentUser.farm;
+        document.getElementById('settingsName').textContent = this.currentUser.name;
+        document.getElementById('settingsEmail').textContent = this.currentUser.email;
+        document.getElementById('settingsFarmName').textContent = this.currentUser.farm;
+    }
+
+    changePage(pageName) {
+        document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
         document.getElementById(pageName).classList.add('active');
 
-        // Update nav buttons
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
         document.querySelector(`[data-page="${pageName}"]`).classList.add('active');
 
-        // Update page-specific content
         if (pageName === 'dashboard') {
             this.updateDashboard();
         } else if (pageName === 'inventory') {
             this.displayInventory();
         } else if (pageName === 'health') {
             this.displayHealthRecords();
+        } else if (pageName === 'expenses') {
+            this.displayExpenses();
         } else if (pageName === 'reports') {
             this.setupReportsPage();
         }
@@ -107,7 +206,7 @@ class FarmPilot {
         };
 
         this.activities.push(activity);
-        this.saveData();
+        this.saveUserData();
         this.showAlert('Activity logged successfully!', 'success');
         document.getElementById('activityForm').reset();
         this.setDefaultDates();
@@ -116,7 +215,7 @@ class FarmPilot {
 
     deleteActivity(id) {
         this.activities = this.activities.filter(a => a.id !== id);
-        this.saveData();
+        this.saveUserData();
         this.updateDashboard();
         this.showAlert('Activity deleted', 'success');
     }
@@ -137,6 +236,7 @@ class FarmPilot {
             type: document.getElementById('itemType').value,
             quantity: parseFloat(document.getElementById('itemQuantity').value),
             unit: document.getElementById('itemUnit').value,
+            cost: parseFloat(document.getElementById('itemCost').value) || 0,
             lastUpdated: new Date().toISOString()
         };
 
@@ -149,7 +249,7 @@ class FarmPilot {
             this.showAlert('Inventory item added', 'success');
         }
 
-        this.saveData();
+        this.saveUserData();
         document.getElementById('inventoryForm').reset();
         this.displayInventory();
         this.updateDashboard();
@@ -163,7 +263,7 @@ class FarmPilot {
             return;
         }
 
-        let html = '<table><thead><tr><th>Item Name</th><th>Type</th><th>Quantity</th><th>Unit</th><th>Last Updated</th><th>Action</th></tr></thead><tbody>';
+        let html = '<table><thead><tr><th>Item Name</th><th>Type</th><th>Quantity</th><th>Unit</th><th>Cost/Unit</th><th>Last Updated</th><th>Action</th></tr></thead><tbody>';
 
         this.inventory.forEach(item => {
             const date = new Date(item.lastUpdated).toLocaleDateString();
@@ -173,6 +273,7 @@ class FarmPilot {
                     <td>${item.type}</td>
                     <td>${item.quantity}</td>
                     <td>${item.unit}</td>
+                    <td>$${item.cost.toFixed(2)}</td>
                     <td>${date}</td>
                     <td>
                         <button class="btn-danger" onclick="app.deleteInventory(${item.id})">Delete</button>
@@ -187,7 +288,7 @@ class FarmPilot {
 
     deleteInventory(id) {
         this.inventory = this.inventory.filter(item => item.id !== id);
-        this.saveData();
+        this.saveUserData();
         this.displayInventory();
         this.showAlert('Inventory item deleted', 'success');
     }
@@ -206,14 +307,16 @@ class FarmPilot {
             symptoms: document.getElementById('symptoms').value,
             treatment: document.getElementById('treatment').value,
             veterinarian: document.getElementById('veterinarian').value,
+            cost: parseFloat(document.getElementById('healthCost').value) || 0,
             timestamp: new Date().toISOString()
         };
 
         this.healthRecords.push(healthRecord);
-        this.saveData();
+        this.saveUserData();
         this.showAlert('Health record logged successfully!', 'success');
         document.getElementById('healthForm').reset();
         this.displayHealthRecords();
+        this.updateDashboard();
     }
 
     displayHealthRecords() {
@@ -229,15 +332,16 @@ class FarmPilot {
             const date = new Date(record.date).toLocaleDateString();
             html += `
                 <div class="health-item">
-                    <div class="health-item-header">
-                        <span class="health-type">🏥 ${date}</span>
+                    <div class="item-header">
+                        <span class="item-type">🏥 ${date}</span>
                         <button class="btn-danger" onclick="app.deleteHealthRecord(${record.id})">Delete</button>
                     </div>
-                    <div class="health-details">
+                    <div class="item-details">
                         <p><strong>Birds Affected:</strong> ${record.affectedBirds}</p>
                         <p><strong>Symptoms:</strong> ${this.escapeHtml(record.symptoms)}</p>
                         ${record.treatment ? `<p><strong>Treatment:</strong> ${this.escapeHtml(record.treatment)}</p>` : ''}
                         ${record.veterinarian ? `<p><strong>Veterinarian:</strong> ${this.escapeHtml(record.veterinarian)}</p>` : ''}
+                        ${record.cost ? `<p><strong>Cost:</strong> $${record.cost.toFixed(2)}</p>` : ''}
                     </div>
                 </div>
             `;
@@ -248,9 +352,102 @@ class FarmPilot {
 
     deleteHealthRecord(id) {
         this.healthRecords = this.healthRecords.filter(r => r.id !== id);
-        this.saveData();
+        this.saveUserData();
         this.displayHealthRecords();
         this.showAlert('Health record deleted', 'success');
+    }
+
+    // ==========================================
+    // Expense Tracking
+    // ==========================================
+
+    handleExpenseSubmit(e) {
+        e.preventDefault();
+
+        const expense = {
+            id: Date.now(),
+            date: document.getElementById('expenseDate').value,
+            category: document.getElementById('expenseCategory').value,
+            description: document.getElementById('expenseDescription').value,
+            amount: parseFloat(document.getElementById('expenseAmount').value),
+            timestamp: new Date().toISOString()
+        };
+
+        this.expenses.push(expense);
+        this.saveUserData();
+        this.showAlert('Expense recorded successfully!', 'success');
+        document.getElementById('expenseForm').reset();
+        this.displayExpenses();
+        this.updateDashboard();
+    }
+
+    displayExpenses() {
+        this.displayExpenseSummary();
+        this.displayExpenseList();
+    }
+
+    displayExpenseSummary() {
+        const container = document.getElementById('expenseSummary');
+
+        if (this.expenses.length === 0) {
+            container.innerHTML = '<p class="empty-state">No expenses recorded yet</p>';
+            return;
+        }
+
+        const categories = {};
+        this.expenses.forEach(exp => {
+            categories[exp.category] = (categories[exp.category] || 0) + exp.amount;
+        });
+
+        const categoryNames = {
+            'feed': '🍽️ Feed & Supplies',
+            'equipment': '🔧 Equipment',
+            'medicine': '💊 Medicine & Health',
+            'labor': '👷 Labor',
+            'utilities': '⚡ Utilities',
+            'maintenance': '🔨 Maintenance',
+            'other': '📝 Other'
+        };
+
+        let html = '';
+        for (const [cat, total] of Object.entries(categories)) {
+            html += `
+                <div class="expense-category">
+                    <div class="category-name">${categoryNames[cat] || cat}</div>
+                    <div class="category-amount">$${total.toFixed(2)}</div>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+    }
+
+    displayExpenseList() {
+        const container = document.getElementById('expenseList');
+
+        if (this.expenses.length === 0) {
+            container.innerHTML = '<p class="empty-state">No expenses recorded yet</p>';
+            return;
+        }
+
+        let html = '';
+        const sorted = [...this.expenses].reverse();
+        sorted.forEach(exp => {
+            const date = new Date(exp.date).toLocaleDateString();
+            html += `
+                <div class="expense-item">
+                    <div class="item-header">
+                        <span class="item-type">${exp.description}</span>
+                        <span class="item-time">$${exp.amount.toFixed(2)} - ${date}</span>
+                    </div>
+                    <div class="item-details">
+                        <p><strong>Category:</strong> ${exp.category}</p>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
     }
 
     // ==========================================
@@ -260,11 +457,15 @@ class FarmPilot {
     updateDashboard() {
         const today = new Date().toISOString().split('T')[0];
         const todayActivities = this.activities.filter(a => a.date === today);
+        const todayExpenses = this.expenses.filter(e => e.date === today).reduce((sum, e) => sum + e.amount, 0);
+        const todayHealthIssues = this.healthRecords.filter(h => h.date === today).length;
 
         document.getElementById('todayActivities').textContent = todayActivities.length;
         document.getElementById('totalBirds').textContent = this.getTotalBirds();
         document.getElementById('feedUsed').textContent = this.getTodayFeedUsed();
         document.getElementById('eggsCollected').textContent = this.getTodayEggsCollected();
+        document.getElementById('todayExpenses').textContent = '$' + todayExpenses.toFixed(2);
+        document.getElementById('healthIssues').textContent = todayHealthIssues;
 
         this.displayRecentActivities();
     }
@@ -283,11 +484,11 @@ class FarmPilot {
             const dateTime = `${activity.date} ${activity.time}`;
             html += `
                 <div class="activity-item">
-                    <div class="activity-item-header">
-                        <span class="activity-type">${this.getActivityEmoji(activity.type)} ${this.formatActivityType(activity.type)}</span>
-                        <span class="activity-time">${dateTime}</span>
+                    <div class="item-header">
+                        <span class="item-type">${this.getActivityEmoji(activity.type)} ${this.formatActivityType(activity.type)}</span>
+                        <span class="item-time">${dateTime}</span>
                     </div>
-                    <div class="activity-notes">
+                    <div class="item-details">
                         ${activity.quantity ? `<p><strong>Quantity:</strong> ${activity.quantity}</p>` : ''}
                         ${activity.notes ? `<p><strong>Notes:</strong> ${this.escapeHtml(activity.notes)}</p>` : ''}
                     </div>
@@ -337,11 +538,14 @@ class FarmPilot {
         const [year, month] = monthStr.split('-');
         const monthActivities = this.activities.filter(a => a.date.startsWith(monthStr));
         const monthHealthRecords = this.healthRecords.filter(r => r.date.startsWith(monthStr));
+        const monthExpenses = this.expenses.filter(e => e.date.startsWith(monthStr));
 
         const activityTypes = {};
         monthActivities.forEach(a => {
             activityTypes[a.type] = (activityTypes[a.type] || 0) + 1;
         });
+
+        const totalExpenses = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
 
         let html = '<div class="report-section">';
         html += `<h4>Report for ${new Date(year, month - 1).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}</h4>`;
@@ -358,15 +562,70 @@ class FarmPilot {
             html += '<h5>Health Records</h5>';
             html += '<ul class="report-list">';
             html += `<li><strong>Total Health Issues:</strong> ${monthHealthRecords.length}</li>`;
-            monthHealthRecords.forEach(record => {
-                html += `<li>${record.date}: ${record.affectedBirds} bird(s) - ${record.symptoms.substring(0, 50)}...</li>`;
-            });
+            html += `<li><strong>Total Health Cost:</strong> $${monthHealthRecords.reduce((sum, r) => sum + r.cost, 0).toFixed(2)}</li>`;
             html += '</ul>';
         }
+
+        html += '<h5>Expenses</h5>';
+        html += '<ul class="report-list">';
+        html += `<li><strong>Total Expenses:</strong> $${totalExpenses.toFixed(2)}</li>`;
+        html += '</ul>';
 
         html += '</div>';
         document.getElementById('reportContent').innerHTML = html;
         this.showAlert('Report generated successfully!', 'success');
+    }
+
+    // ==========================================
+    // Settings
+    // ==========================================
+
+    exportData() {
+        const data = {
+            user: this.currentUser,
+            activities: this.activities,
+            inventory: this.inventory,
+            healthRecords: this.healthRecords,
+            expenses: this.expenses,
+            exportDate: new Date().toISOString()
+        };
+
+        const dataStr = JSON.stringify(data, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `FarmPilot_${this.currentUser.farm}_${Date.now()}.json`;
+        link.click();
+        this.showAlert('Data exported successfully!', 'success');
+    }
+
+    clearAllData() {
+        if (confirm('Are you sure you want to delete all your data? This cannot be undone.')) {
+            this.activities = [];
+            this.inventory = [];
+            this.healthRecords = [];
+            this.expenses = [];
+            this.saveUserData();
+            this.updateDashboard();
+            this.showAlert('All data cleared', 'success');
+        }
+    }
+
+    deleteAccount() {
+        if (confirm('Are you sure you want to delete your account? This cannot be undone.')) {
+            const userKey = this.currentUser.email;
+            delete this.users[userKey];
+            this.saveUsersData();
+            localStorage.removeItem(`farmPilot_${userKey}_activities`);
+            localStorage.removeItem(`farmPilot_${userKey}_inventory`);
+            localStorage.removeItem(`farmPilot_${userKey}_health`);
+            localStorage.removeItem(`farmPilot_${userKey}_expenses`);
+            localStorage.removeItem('farmPilotCurrentUser');
+            this.currentUser = null;
+            this.showAlert('Account deleted', 'success');
+            setTimeout(() => location.reload(), 1000);
+        }
     }
 
     // ==========================================
@@ -387,6 +646,11 @@ class FarmPilot {
         const timeInput = document.getElementById('activityTime');
         if (timeInput && !timeInput.value) {
             timeInput.value = currentTime;
+        }
+
+        const expenseDateInput = document.getElementById('expenseDate');
+        if (expenseDateInput && !expenseDateInput.value) {
+            expenseDateInput.value = today;
         }
     }
 
@@ -419,14 +683,11 @@ class FarmPilot {
     }
 
     showAlert(message, type = 'success') {
-        // Create alert element
         const alert = document.createElement('div');
-        alert.className = `alert alert-${type} show`;
+        alert.className = `alert alert-${type}`;
         alert.textContent = message;
+        document.body.appendChild(alert);
 
-        document.body.insertBefore(alert, document.body.firstChild);
-
-        // Remove after 3 seconds
         setTimeout(() => {
             alert.remove();
         }, 3000);
@@ -440,8 +701,8 @@ class FarmPilot {
 
     logout() {
         if (confirm('Are you sure you want to logout?')) {
-            localStorage.clear();
-            alert('You have been logged out. All data has been cleared.');
+            localStorage.removeItem('farmPilotCurrentUser');
+            this.currentUser = null;
             location.reload();
         }
     }

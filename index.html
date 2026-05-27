@@ -7,11 +7,58 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
+    <!-- Auth Modal -->
+    <div id="authModal" class="modal active">
+        <div class="modal-content">
+            <div class="auth-container">
+                <h1>🐔 FarmPilot</h1>
+                <p class="subtitle">Poultry Farm Activity Tracker</p>
+                
+                <!-- Login Form -->
+                <form id="loginForm" class="auth-form active">
+                    <h2>Login</h2>
+                    <div class="form-group">
+                        <input type="email" id="loginEmail" placeholder="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="loginPassword" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Login</button>
+                    <p class="auth-toggle">Don't have an account? <a href="#" onclick="app.toggleAuthForm(); return false;">Sign up</a></p>
+                </form>
+
+                <!-- Signup Form -->
+                <form id="signupForm" class="auth-form">
+                    <h2>Create Account</h2>
+                    <div class="form-group">
+                        <input type="text" id="signupName" placeholder="Full Name" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="signupEmail" placeholder="Email" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="farmName" placeholder="Farm Name" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="signupPassword" placeholder="Password (min 6 chars)" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="signupPassword2" placeholder="Confirm Password" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn-primary">Sign Up</button>
+                    <p class="auth-toggle">Already have an account? <a href="#" onclick="app.toggleAuthForm(); return false;">Login</a></p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="appContainer" class="container" style="display: none;">
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="logo">
                 <h1>🐔 FarmPilot</h1>
+                <p class="farm-name" id="farmNameDisplay"></p>
             </div>
             <nav class="nav-menu">
                 <button class="nav-btn active" data-page="dashboard">
@@ -26,11 +73,20 @@
                 <button class="nav-btn" data-page="health">
                     🏥 Health Tracking
                 </button>
+                <button class="nav-btn" data-page="expenses">
+                    💰 Expenses
+                </button>
                 <button class="nav-btn" data-page="reports">
                     📈 Reports
                 </button>
+                <button class="nav-btn" data-page="settings">
+                    ⚙️ Settings
+                </button>
             </nav>
-            <button class="btn-logout" id="logoutBtn">🚪 Logout</button>
+            <div class="user-info">
+                <p id="userEmail"></p>
+                <button class="btn-logout" id="logoutBtn">🚪 Logout</button>
+            </div>
         </aside>
 
         <!-- Main Content -->
@@ -54,6 +110,14 @@
                     <div class="card stats-card">
                         <h3>Eggs Collected</h3>
                         <p class="stat-number" id="eggsCollected">0</p>
+                    </div>
+                    <div class="card stats-card">
+                        <h3>Today's Expenses</h3>
+                        <p class="stat-number" id="todayExpenses">$0</p>
+                    </div>
+                    <div class="card stats-card">
+                        <h3>Health Issues</h3>
+                        <p class="stat-number" id="healthIssues">0</p>
                     </div>
                 </div>
                 <div class="card full-width">
@@ -141,6 +205,11 @@
                             <input type="text" id="itemUnit" placeholder="e.g., kg, bags, pieces" required>
                         </div>
 
+                        <div class="form-group">
+                            <label for="itemCost">Cost per Unit (Optional)</label>
+                            <input type="number" id="itemCost" placeholder="Cost" min="0" step="0.01">
+                        </div>
+
                         <button type="submit" class="btn-primary">Update Inventory</button>
                     </form>
                 </div>
@@ -184,6 +253,11 @@
                             <input type="text" id="veterinarian" placeholder="Vet name or 'Not contacted'">
                         </div>
 
+                        <div class="form-group">
+                            <label for="healthCost">Treatment Cost</label>
+                            <input type="number" id="healthCost" placeholder="Cost of treatment" min="0" step="0.01">
+                        </div>
+
                         <button type="submit" class="btn-primary">Log Health Record</button>
                     </form>
                 </div>
@@ -192,6 +266,60 @@
                     <h3>Health Records</h3>
                     <div id="healthRecords" class="health-list">
                         <p class="empty-state">No health records yet</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Expenses Page -->
+            <section id="expenses" class="page">
+                <h2>Expense Tracking</h2>
+                <div class="card">
+                    <h3>Add Expense</h3>
+                    <form id="expenseForm">
+                        <div class="form-group">
+                            <label for="expenseDate">Date *</label>
+                            <input type="date" id="expenseDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="expenseCategory">Category *</label>
+                            <select id="expenseCategory" required>
+                                <option value="">Select category</option>
+                                <option value="feed">🍽️ Feed & Supplies</option>
+                                <option value="equipment">🔧 Equipment</option>
+                                <option value="medicine">💊 Medicine & Health</option>
+                                <option value="labor">👷 Labor</option>
+                                <option value="utilities">⚡ Utilities</option>
+                                <option value="maintenance">🔨 Maintenance</option>
+                                <option value="other">📝 Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="expenseDescription">Description *</label>
+                            <input type="text" id="expenseDescription" placeholder="What was purchased?" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="expenseAmount">Amount ($) *</label>
+                            <input type="number" id="expenseAmount" placeholder="0.00" required min="0" step="0.01">
+                        </div>
+
+                        <button type="submit" class="btn-primary">Add Expense</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3>Expense Summary</h3>
+                    <div id="expenseSummary" class="expense-summary">
+                        <p class="empty-state">No expenses recorded yet</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Recent Expenses</h3>
+                    <div id="expenseList" class="expense-list">
+                        <p class="empty-state">No expenses recorded yet</p>
                     </div>
                 </div>
             </section>
@@ -209,6 +337,37 @@
                     <div id="reportContent" class="report-content">
                         <p class="empty-state">Select a month to view report</p>
                     </div>
+                </div>
+
+                <div class="card">
+                    <h3>Production Metrics</h3>
+                    <div id="productionMetrics" class="metrics-grid">
+                        <p class="empty-state">No data available</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Page -->
+            <section id="settings" class="page">
+                <h2>Settings</h2>
+                <div class="card">
+                    <h3>Profile Information</h3>
+                    <div class="settings-item">
+                        <p><strong>Name:</strong> <span id="settingsName"></span></p>
+                        <p><strong>Email:</strong> <span id="settingsEmail"></span></p>
+                        <p><strong>Farm Name:</strong> <span id="settingsFarmName"></span></p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Data Management</h3>
+                    <button type="button" class="btn-secondary" id="exportDataBtn">📥 Export Data (JSON)</button>
+                    <button type="button" class="btn-secondary" id="clearDataBtn">🗑️ Clear All Data</button>
+                </div>
+
+                <div class="card">
+                    <h3>Account</h3>
+                    <button type="button" class="btn-danger" id="deleteAccountBtn">❌ Delete Account</button>
                 </div>
             </section>
         </main>
