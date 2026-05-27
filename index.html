@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FarmPilot - Poultry Farm Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <h1>🐔 FarmPilot</h1>
+            </div>
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-page="dashboard">
+                    📊 Dashboard
+                </button>
+                <button class="nav-btn" data-page="log-activity">
+                    ✏️ Log Activity
+                </button>
+                <button class="nav-btn" data-page="inventory">
+                    📦 Inventory
+                </button>
+                <button class="nav-btn" data-page="health">
+                    🏥 Health Tracking
+                </button>
+                <button class="nav-btn" data-page="reports">
+                    📈 Reports
+                </button>
+            </nav>
+            <button class="btn-logout" id="logoutBtn">🚪 Logout</button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Page -->
+            <section id="dashboard" class="page active">
+                <h2>Dashboard</h2>
+                <div class="dashboard-grid">
+                    <div class="card stats-card">
+                        <h3>Today's Activities</h3>
+                        <p class="stat-number" id="todayActivities">0</p>
+                    </div>
+                    <div class="card stats-card">
+                        <h3>Total Birds</h3>
+                        <p class="stat-number" id="totalBirds">0</p>
+                    </div>
+                    <div class="card stats-card">
+                        <h3>Feed Used (kg)</h3>
+                        <p class="stat-number" id="feedUsed">0</p>
+                    </div>
+                    <div class="card stats-card">
+                        <h3>Eggs Collected</h3>
+                        <p class="stat-number" id="eggsCollected">0</p>
+                    </div>
+                </div>
+                <div class="card full-width">
+                    <h3>Recent Activities</h3>
+                    <div id="recentActivities" class="activity-list">
+                        <p class="empty-state">No activities logged yet</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Log Activity Page -->
+            <section id="log-activity" class="page">
+                <h2>Log Activity</h2>
+                <div class="card">
+                    <form id="activityForm">
+                        <div class="form-group">
+                            <label for="activityType">Activity Type *</label>
+                            <select id="activityType" required>
+                                <option value="">Select activity type</option>
+                                <option value="feeding">🍽️ Feeding</option>
+                                <option value="watering">💧 Watering</option>
+                                <option value="egg-collection">🥚 Egg Collection</option>
+                                <option value="health-check">🏥 Health Check</option>
+                                <option value="cleaning">🧹 Cleaning</option>
+                                <option value="vaccination">💉 Vaccination</option>
+                                <option value="treatment">💊 Treatment</option>
+                                <option value="other">📝 Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="activityDate">Date *</label>
+                            <input type="date" id="activityDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="activityTime">Time *</label>
+                            <input type="time" id="activityTime" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quantity">Quantity/Count</label>
+                            <input type="number" id="quantity" placeholder="e.g., 50 birds, 10 kg feed" min="0" step="0.1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="notes">Notes</label>
+                            <textarea id="notes" placeholder="Add any observations or details..."></textarea>
+                        </div>
+
+                        <button type="submit" class="btn-primary">Log Activity</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Inventory Page -->
+            <section id="inventory" class="page">
+                <h2>Inventory Management</h2>
+                <div class="card">
+                    <h3>Add/Update Inventory Item</h3>
+                    <form id="inventoryForm">
+                        <div class="form-group">
+                            <label for="itemName">Item Name *</label>
+                            <input type="text" id="itemName" placeholder="e.g., Layer Feed, Water Containers" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="itemType">Item Type *</label>
+                            <select id="itemType" required>
+                                <option value="">Select type</option>
+                                <option value="feed">Feed/Supplies</option>
+                                <option value="equipment">Equipment</option>
+                                <option value="medicine">Medicine</option>
+                                <option value="birds">Birds</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="itemQuantity">Quantity *</label>
+                            <input type="number" id="itemQuantity" placeholder="Current quantity" required min="0" step="0.1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="itemUnit">Unit *</label>
+                            <input type="text" id="itemUnit" placeholder="e.g., kg, bags, pieces" required>
+                        </div>
+
+                        <button type="submit" class="btn-primary">Update Inventory</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3>Current Inventory</h3>
+                    <div id="inventoryList" class="inventory-table">
+                        <p class="empty-state">No inventory items yet</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Health Tracking Page -->
+            <section id="health" class="page">
+                <h2>Health Tracking</h2>
+                <div class="card">
+                    <h3>Log Health Issue</h3>
+                    <form id="healthForm">
+                        <div class="form-group">
+                            <label for="healthDate">Date *</label>
+                            <input type="date" id="healthDate" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="affectedBirds">Number of Birds Affected *</label>
+                            <input type="number" id="affectedBirds" placeholder="Number of birds" required min="1">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="symptoms">Symptoms *</label>
+                            <textarea id="symptoms" placeholder="Describe symptoms observed..." required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="treatment">Treatment Applied</label>
+                            <textarea id="treatment" placeholder="What treatment was given?"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="veterinarian">Veterinarian Contacted?</label>
+                            <input type="text" id="veterinarian" placeholder="Vet name or 'Not contacted'">
+                        </div>
+
+                        <button type="submit" class="btn-primary">Log Health Record</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3>Health Records</h3>
+                    <div id="healthRecords" class="health-list">
+                        <p class="empty-state">No health records yet</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reports Page -->
+            <section id="reports" class="page">
+                <h2>Reports & Analytics</h2>
+                <div class="card">
+                    <h3>Activity Summary</h3>
+                    <div class="form-group">
+                        <label for="reportMonth">Select Month:</label>
+                        <input type="month" id="reportMonth">
+                        <button type="button" class="btn-secondary" id="generateReportBtn">Generate Report</button>
+                    </div>
+                    <div id="reportContent" class="report-content">
+                        <p class="empty-state">Select a month to view report</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
