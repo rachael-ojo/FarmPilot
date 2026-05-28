@@ -84,6 +84,37 @@ body {
     box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
 }
 
+/* Password Input Group */
+.password-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-group input {
+    flex: 1;
+    padding-right: 40px;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease;
+    opacity: 0.6;
+}
+
+.toggle-password:hover {
+    opacity: 1;
+}
+
 .auth-toggle {
     text-align: center;
     margin-top: 15px;

@@ -40,6 +40,15 @@ class FarmPilot {
         document.getElementById('signupForm').classList.toggle('active');
     }
 
+    togglePasswordVisibility(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field.type === 'password') {
+            field.type = 'text';
+        } else {
+            field.type = 'password';
+        }
+    }
+
     setupEventListeners() {
         // Auth
         document.getElementById('loginForm')?.addEventListener('submit', (e) => this.handleLogin(e));
@@ -339,9 +348,9 @@ class FarmPilot {
                     <div class="item-details">
                         <p><strong>Birds Affected:</strong> ${record.affectedBirds}</p>
                         <p><strong>Symptoms:</strong> ${this.escapeHtml(record.symptoms)}</p>
-                        ${record.treatment ? `<p><strong>Treatment:</strong> ${this.escapeHtml(record.treatment)}</p>` : ''}
-                        ${record.veterinarian ? `<p><strong>Veterinarian:</strong> ${this.escapeHtml(record.veterinarian)}</p>` : ''}
-                        ${record.cost ? `<p><strong>Cost:</strong> $${record.cost.toFixed(2)}</p>` : ''}
+                        ${record.treatment ? `<p><strong>Treatment:</strong> ${this.escapeHtml(record.treatment)}<\/p>` : ''}
+                        ${record.veterinarian ? `<p><strong>Veterinarian:</strong> ${this.escapeHtml(record.veterinarian)}<\/p>` : ''}
+                        ${record.cost ? `<p><strong>Cost:</strong> $${record.cost.toFixed(2)}<\/p>` : ''}
                     </div>
                 </div>
             `;
